@@ -357,17 +357,37 @@ def load_model_from_config(config, sd):
     return model
 
 
+# def load_model(config, ckpt, gpu, eval_mode):
+#     if ckpt:
+#         logger.info(f"Loading model from {ckpt}")
+#         pl_sd = torch.load(ckpt, map_location="cpu")
+#         global_step = pl_sd.get("global_step", None)
+#         #global_step = pl_sd["global_step"]
+#     else:
+#         pl_sd = {"state_dict": None}
+#         global_step = None
+#     model = load_model_from_config(config.model,
+#                                    pl_sd["state_dict"])
+
+#     return model, global_step
+
 def load_model(config, ckpt, gpu, eval_mode):
     if ckpt:
         logger.info(f"Loading model from {ckpt}")
         pl_sd = torch.load(ckpt, map_location="cpu")
+        logger.info(f"Checkpoint keys: {pl_sd.keys()}")  # Inspect the keys to understand the structure
         global_step = pl_sd.get("global_step", None)
-        #global_step = pl_sd["global_step"]
+        
+        # Check if 'state_dict' exists in the checkpoint
+        if 'state_dict' in pl_sd:
+            model = load_model_from_config(config.model, pl_sd['state_dict'])
+        else:
+            logger.warning("Checkpoint does not contain 'state_dict'. Loading weights directly.")
+            model = load_model_from_config(config.model, pl_sd)  # Load directly from the checkpoint
     else:
         pl_sd = {"state_dict": None}
         global_step = None
-    model = load_model_from_config(config.model,
-                                   pl_sd["state_dict"])
+        model = load_model_from_config(config.model, pl_sd["state_dict"])
 
     return model, global_step
 
